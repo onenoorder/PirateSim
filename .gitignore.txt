@@ -1,1 +1,1 @@
-.synod-attachments
+.synod-attachments/
