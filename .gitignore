@@ -1,1 +1,40 @@
+# CMake build artifacts
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+*.cmake~
+
+# Visual Studio / IDE
+.vs/
+*.slo
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.db
+
+# C++ compiled binary artifacts
+*.exe
+*.obj
+*.pdb
+*.lib
+*.dll
+*.so.*
+*.dylib
+*.a
+*.o
+
+# OS-generated temp files
+Thumbs.db
+desktop.ini
+.DS_Store
+._*
+
+# Game-specific
+*.log
+steam_appid.txt
+
+# Preserved - Synod attachments
 .synod-attachments/
