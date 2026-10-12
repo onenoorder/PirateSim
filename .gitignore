@@ -1,1 +1,71 @@
+# Synod
 .synod-attachments/
+.synod-worktrees/
+
+# Build
+build/
+build-*/
+cmake-build-*/
+out/
+bin/
+obj/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+*.cmake
+
+# IDE
+.vscode/
+.idea/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.opendb
+*.opensdf
+*.sdf
+*.suo
+
+# Compiled objects
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.lib
+*.exp
+*.pdb
+*.ilk
+
+# Logs
+*.log
+*.log.*
+
+# Cache
+.ccache/
+*.cache
+
+# Temporary files
+*~
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Steamworks SDK (large, not in repo)
+dev-env/steamworks-sdk/
+
+# Test outputs
+Testing/
+test-results/
+coverage/
+*.gcda
+*.gcno
+*.gcov
+
+# Container
+.containerignore

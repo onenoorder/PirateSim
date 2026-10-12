@@ -1,0 +1,77 @@
+version: '3.8'
+
+# PirateSim Development Environment
+# Usage:
+#   podman-compose up -d dev        # Start dev container in background
+#   podman-compose exec dev bash    # Enter dev container shell
+#   podman-compose run --rm test    # Run tests in container (one-off)
+#   podman-compose run --rm release # Build release in container (one-off)
+
+services:
+  # Development service - interactive container with source mounted
+  dev:
+    build:
+      context: .
+      dockerfile: Containerfile
+      args:
+        USER_UID: ${UID:-1000}
+        USER_GID: ${GID:-1000}
+    image: piratesim-dev:latest
+    container_name: piratesim-dev
+    working_dir: /workspace
+    volumes:
+      # Mount project source for live editing
+      - .:/workspace:Z
+      # Optional: Mount Steamworks SDK if present
+      - ./dev-env/steamworks-sdk:/opt/steamworks-sdk:Z,ro
+    environment:
+      - TERM=xterm-256color
+      - CCACHE_DIR=/workspace/.ccache
+    # Keep container running for interactive use
+    tty: true
+    stdin_open: true
+    # No ports exposed - build/test only container
+    # network_mode: "none"  # Uncomment for fully isolated builds
+
+  # Test service - runs test suite and exits
+  test:
+    build:
+      context: .
+      dockerfile: Containerfile
+      args:
+        USER_UID: ${UID:-1000}
+        USER_GID: ${GID:-1000}
+    image: piratesim-dev:latest
+    container_name: piratesim-test
+    working_dir: /workspace
+    volumes:
+      - .:/workspace:Z
+      - ./dev-env/steamworks-sdk:/opt/steamworks-sdk:Z,ro
+    environment:
+      - CCACHE_DIR=/workspace/.ccache
+    entrypoint: ["/workspace/scripts/validate-container.sh"]
+    # No tty/stdin - runs and exits
+
+  # Release service - builds release configuration and exits
+  release:
+    build:
+      context: .
+      dockerfile: Containerfile
+      args:
+        USER_UID: ${UID:-1000}
+        USER_GID: ${GID:-1000}
+    image: piratesim-dev:latest
+    container_name: piratesim-release
+    working_dir: /workspace
+    volumes:
+      - .:/workspace:Z
+      - ./dev-env/steamworks-sdk:/opt/steamworks-sdk:Z,ro
+    environment:
+      - CCACHE_DIR=/workspace/.ccache
+    entrypoint: ["/bin/bash", "-c", "cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel"]
+    # No tty/stdin - runs and exits
+
+# Named volumes for caching (optional)
+volumes:
+  ccache:
+    driver: local

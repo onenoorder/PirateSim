@@ -1,0 +1,148 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "container-debug",
+      "displayName": "Container Debug Build",
+      "description": "Configure Debug build inside Podman container",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
+      "environment": {
+        "CCACHE_DIR": "${sourceDir}/.ccache"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${env.CONTAINER}",
+        "rhs": "1"
+      }
+    },
+    {
+      "name": "container-release",
+      "displayName": "Container Release Build",
+      "description": "Configure Release build inside Podman container",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
+      "environment": {
+        "CCACHE_DIR": "${sourceDir}/.ccache"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${env.CONTAINER}",
+        "rhs": "1"
+      }
+    },
+    {
+      "name": "local-debug",
+      "displayName": "Local Debug Build",
+      "description": "Configure Debug build on host machine",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-local",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "local-release",
+      "displayName": "Local Release Build",
+      "description": "Configure Release build on host machine",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-local-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "container-debug",
+      "configurePreset": "container-debug",
+      "jobs": 8
+    },
+    {
+      "name": "container-release",
+      "configurePreset": "container-release",
+      "jobs": 8
+    },
+    {
+      "name": "local-debug",
+      "configurePreset": "local-debug",
+      "jobs": 8
+    },
+    {
+      "name": "local-release",
+      "configurePreset": "local-release",
+      "jobs": 8
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "container-debug",
+      "configurePreset": "container-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "local-debug",
+      "configurePreset": "local-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "container-ci",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "container-debug"
+        },
+        {
+          "type": "build",
+          "name": "container-debug"
+        },
+        {
+          "type": "test",
+          "name": "container-debug"
+        }
+      ]
+    },
+    {
+      "name": "local-ci",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "local-debug"
+        },
+        {
+          "type": "build",
+          "name": "local-debug"
+        },
+        {
+          "type": "test",
+          "name": "local-debug"
+        }
+      ]
+    }
+  ]
+}
