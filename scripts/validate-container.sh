@@ -1,13 +1,20 @@
 #!/bin/bash
 # Container validation script
-# Runs inside the PirateSim dev container to verify all tools and libraries are present
+# Runs inside the PirateSim dev container to verify all tools and libraries are present.
+#
+# Can also be smoke-run on a host without container tooling to verify the script itself
+# (counters must reach the summary even when every tool check fails):
+#   PIRATESIM_WORKSPACE=. bash scripts/validate-container.sh
 
 set -euo pipefail
+
+# Workspace root: /workspace inside the container; overridable for host smoke runs.
+WORKSPACE_DIR="${PIRATESIM_WORKSPACE:-/workspace}"
 
 echo "=== PirateSim Container Validation ==="
 echo "Date: $(date)"
 echo "User: $(whoami) (UID=$(id -u), GID=$(id -g))"
-echo "Workspace: $(pwd)"
+echo "Workspace: $WORKSPACE_DIR"
 echo ""
 
 # Colors for output
@@ -19,30 +26,35 @@ NC='\033[0m' # No Color
 pass_count=0
 fail_count=0
 
+# NOTE: counters MUST use arithmetic assignment (`var=$((var+1))`).
+# `((var++))` evaluates to 0 on first use, which under `set -e` terminates the shell.
 check() {
     local name="$1"
     local cmd="$2"
     echo -n "Checking $name... "
     if eval "$cmd" >/dev/null 2>&1; then
         echo -e "${GREEN}PASS${NC}"
-        ((pass_count++))
+        pass_count=$((pass_count + 1))
     else
         echo -e "${RED}FAIL${NC}"
-        ((fail_count++))
+        fail_count=$((fail_count + 1))
     fi
 }
 
 check_output() {
     local name="$1"
     local cmd="$2"
+    local output
     echo -n "Checking $name... "
-    output=$(eval "$cmd" 2>&1)
-    if [ $? -eq 0 ]; then
+    # The command substitution is part of the if-condition itself so its exit
+    # status feeds the branch directly (no `$?` in between, which would break
+    # under `set -e` and swallow the status).
+    if output=$(eval "$cmd" 2>&1); then
         echo -e "${GREEN}PASS${NC} ($output)"
-        ((pass_count++))
+        pass_count=$((pass_count + 1))
     else
         echo -e "${RED}FAIL${NC} ($output)"
-        ((fail_count++))
+        fail_count=$((fail_count + 1))
     fi
 }
 
@@ -76,7 +88,7 @@ check_output "GLM" "pkg-config --libs --cflags glm 2>/dev/null || echo 'GLM head
 # 3. Check Google Test
 echo ""
 echo "--- Test Framework Checks ---"
-check "gtest headers" "ls /usr/include/gtest/gtest.h 2>/dev/null || ls /usr/include/gtest/gtest.h 2>/dev/null"
+check "gtest headers" "test -f /usr/include/gtest/gtest.h || test -f /usr/local/include/gtest/gtest.h"
 check "gtest libs" "ls /usr/lib64/libgtest*.so 2>/dev/null || ls /usr/lib/libgtest*.so 2>/dev/null || ls /usr/lib/x86_64-linux-gnu/libgtest*.so 2>/dev/null"
 
 # 4. Compile minimal SDL2+OpenGL test program
@@ -87,6 +99,7 @@ cat > /tmp/test_sdl2_opengl.cpp << 'EOF'
 #include <SDL2/SDL_opengl.h>
 #include <GL/gl.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 
 int main() {
@@ -95,7 +108,7 @@ int main() {
         std::cerr << "SDL_Init failed: " << SDL_GetError() << std::endl;
         return 1;
     }
-    
+
     // Create window (hidden, no display needed for compilation test)
     SDL_Window* window = SDL_CreateWindow(
         "Test",
@@ -108,7 +121,7 @@ int main() {
         SDL_Quit();
         return 1;
     }
-    
+
     // Create OpenGL context
     SDL_GLContext context = SDL_GL_CreateContext(window);
     if (!context) {
@@ -117,36 +130,40 @@ int main() {
         SDL_Quit();
         return 1;
     }
-    
+
     // Test GLM
     glm::vec3 v(1.0f, 2.0f, 3.0f);
     glm::mat4 m = glm::translate(glm::mat4(1.0f), v);
-    
+
     // Basic OpenGL call
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     GLenum err = glGetError();
     if (err != GL_NO_ERROR) {
         std::cerr << "OpenGL error: " << err << std::endl;
     }
-    
+
     // Cleanup
     SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);
     SDL_Quit();
-    
-    std::cout << "SDL2 + OpenGL + GLM test PASSED" << std::endl;
+
+    std::cout << "SDL2 + OpenGL + GLM test PASSED (mat4=" << m[0][0] << ")" << std::endl;
     return 0;
 }
 EOF
 
-check_output "SDL2+OpenGL+GLM compilation" "g++ -std=c++17 /tmp/test_sdl2_opengl.cpp -o /tmp/test_sdl2_opengl $(pkg-config --cflags --libs sdl2) -lGL 2>&1"
+check_output "SDL2+OpenGL+GLM compilation" "g++ -std=c++17 /tmp/test_sdl2_opengl.cpp -o /tmp/test_sdl2_opengl \$(pkg-config --cflags --libs sdl2) -lGL 2>&1"
 
 check_output "SDL2+OpenGL+GLM execution" "/tmp/test_sdl2_opengl 2>&1"
 
 # 5. Test CMake configure/build/test cycle
 echo ""
 echo "--- CMake Build Test ---"
-cd /workspace
+if [ ! -d "$WORKSPACE_DIR" ]; then
+    echo "ERROR: workspace directory $WORKSPACE_DIR not found (set PIRATESIM_WORKSPACE to override)." >&2
+    exit 1
+fi
+cd "$WORKSPACE_DIR"
 
 # Check if there's a CMakeLists.txt to test with
 if [ -f "CMakeLists.txt" ]; then
@@ -160,15 +177,15 @@ fi
 # 6. Volume mount permission test
 echo ""
 echo "--- Volume Mount Permission Test ---"
-test_file="/workspace/.container_write_test_$$"
+test_file="${WORKSPACE_DIR}/.container_write_test_$$"
 echo -n "Testing write from container... "
 if echo "test" > "$test_file" 2>/dev/null; then
     echo -e "${GREEN}PASS${NC}"
-    ((pass_count++))
+    pass_count=$((pass_count + 1))
     rm -f "$test_file"
 else
     echo -e "${RED}FAIL${NC}"
-    ((fail_count++))
+    fail_count=$((fail_count + 1))
 fi
 
 # 7. Check Steamworks SDK mount (optional)
@@ -187,7 +204,7 @@ echo "=== Validation Summary ==="
 echo -e "Passed: ${GREEN}$pass_count${NC}"
 echo -e "Failed: ${RED}$fail_count${NC}"
 
-if [ $fail_count -eq 0 ]; then
+if [ "$fail_count" -eq 0 ]; then
     echo -e "${GREEN}All checks passed!${NC}"
     exit 0
 else

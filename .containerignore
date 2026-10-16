@@ -1,0 +1,83 @@
+# PirateSim Container Build Ignore Patterns
+# Excludes files/directories from container build context (COPY . .)
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Synod worktrees
+.synod-worktrees
+
+# Build directories
+build/
+build-*/
+cmake-build-*/
+out/
+bin/
+obj/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+*.cmake
+
+# IDE
+.vscode/
+.idea/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.opendb
+*.opensdf
+*.sdf
+*.suo
+
+# Compiled objects
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.lib
+*.exp
+*.pdb
+*.ilk
+
+# Logs
+*.log
+*.log.*
+
+# Cache
+.ccache/
+*.cache
+
+# Temporary files
+*~
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Steamworks SDK (large, never sent to build context; mounted as a volume instead)
+dev-env/steamworks-sdk/
+
+# Local test/QA scratch
+.tmp-scratch/
+docs/qa/
+
+# Documentation (optional - uncomment to exclude from container builds)
+# *.md
+# docs/
+
+# Test outputs
+Testing/
+test-results/
+coverage/
+*.gcda
+*.gcno
+*.gcov

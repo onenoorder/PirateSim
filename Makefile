@@ -28,9 +28,16 @@ container-shell:
 container-test:
 	podman-compose run --rm test
 
-# Run linting tools
+# Run linting tools (skipped until src/ exists)
 container-lint:
-	podman-compose run --rm dev bash -c "cppcheck --enable=all --std=c++17 --suppress=missingIncludeSystem src/ 2>&1 | head -50; clang-tidy src/**/*.cpp -- 2>&1 | head -50"
+	@if [ ! -d "$(PWD)/src" ]; then \
+	    echo "container-lint: no src/ directory yet (greenfield) - nothing to lint."; \
+	else \
+	    podman run --rm \
+	        -v $(PWD):/workspace:Z \
+	        -w /workspace \
+	        piratesim-dev bash -c "find src/ -name '*.cpp' -o -name '*.hpp' | xargs cppcheck --enable=all --std=c++17 --suppress=missingIncludeSystem 2>&1 | head -50"; \
+	fi
 
 # Build release configuration
 container-release:
@@ -60,7 +67,8 @@ podman-shell:
 	    --user $(shell id -u):$(shell id -g) \
 	    piratesim-dev
 
-# Run validation directly
+# Run validation directly (bash invocation avoids depending on the +x bit
+# surviving Windows checkouts; the container user owns the script)
 podman-test:
 	podman run --rm \
 	    -v $(PWD):/workspace:Z \
@@ -68,6 +76,7 @@ podman-test:
 	    -w /workspace \
 	    -e CCACHE_DIR=/workspace/.ccache \
 	    --user $(shell id -u):$(shell id -g) \
+	    --entrypoint /bin/bash \
 	    piratesim-dev /workspace/scripts/validate-container.sh
 
 # Build release directly

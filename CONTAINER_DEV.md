@@ -109,12 +109,12 @@ The `:Z` suffix ensures proper SELinux labeling on Fedora/RHEL hosts.
 The Steamworks SDK is not available in package repositories. To use it:
 
 1. Download the Steamworks SDK from the Steamworks developer portal
-2. Place it in `./dev-env/steamworks-sdk/` on the host
+2. Place it in `./dev-env/steamworks-sdk/` on the host (only the `.gitkeep` placeholder is tracked; SDK contents stay untracked)
 3. It will be mounted read-only at `/opt/steamworks-sdk` in the container
 
 ```bash
 mkdir -p dev-env/steamworks-sdk
-# Copy SDK contents here
+# Copy SDK contents here (git-ignored except the .gitkeep placeholder)
 ```
 
 ## IDE Integration
@@ -149,6 +149,8 @@ Run the validation script to verify the container has all required tools:
 make container-test
 # or
 podman-compose run --rm test
+# or directly inside the container:
+bash /workspace/scripts/validate-container.sh
 ```
 
 This checks:
@@ -156,8 +158,11 @@ This checks:
 - pkg-config can find SDL2, SDL2_mixer, OpenGL, GLM
 - Google Test headers and libraries present
 - Minimal SDL2+OpenGL+GLM program compiles and runs
-- CMake configure/build/test cycle works (if CMakeLists.txt exists)
+- CMake configure/build/test cycle (CMakeLists.txt builds the `piratesim` bootstrap executable and registers gtest/ctest)
 - Volume mount permissions (write from container, visible on host)
+
+> Note: always invoke the script through `bash` (as above). The executable bit
+> may not survive Windows checkouts.
 
 ## Troubleshooting
 
@@ -227,9 +232,12 @@ RUN cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel
 | `podman-compose.yml` | Orchestration for dev/test/release services |
 | `Makefile` | Convenience targets for common operations |
 | `scripts/validate-container.sh` | Validation script run inside container |
-| `.containerignore` | Exclude patterns for container build context |
+| `.containerignore` | Exclude patterns for container build context (tracked in git) |
+| `CMakeLists.txt` | Minimal CMake skeleton (piratesim target + gtest/ctest wiring) |
 | `CMakePresets.json` | IDE integration presets for container/local builds |
-| `dev-env/steamworks-sdk/` | Directory for Steamworks SDK (gitignored) |
+| `src/main.cpp` | Bootstrap main() — proof the container toolchain builds project code |
+| `tests/container_test.cpp` | gtest smoke test wired into ctest |
+| `dev-env/steamworks-sdk/` | Mount point for the Steamworks SDK (contents untracked, `.gitkeep` placeholder tracked) |
 
 ## Architecture Notes
 

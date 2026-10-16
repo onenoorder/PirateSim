@@ -49,8 +49,11 @@ services:
       - ./dev-env/steamworks-sdk:/opt/steamworks-sdk:Z,ro
     environment:
       - CCACHE_DIR=/workspace/.ccache
-    entrypoint: ["/workspace/scripts/validate-container.sh"]
-    # No tty/stdin - runs and exits
+    # Explicitly invoke via bash and disable TTY so non-interactive runs
+    # (CI, make container-test) cannot hang waiting for a pseudo-terminal.
+    entrypoint: ["/bin/bash", "/workspace/scripts/validate-container.sh"]
+    tty: false
+    stdin_open: false
 
   # Release service - builds release configuration and exits
   release:

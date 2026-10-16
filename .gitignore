@@ -10,12 +10,15 @@ out/
 bin/
 obj/
 
-# CMake
+# CMake — generated files (never commit)
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 CTestTestfile.cmake
-*.cmake
+CMakeUserPresets.json
+# NOTE: *.cmake is intentionally NOT ignored — hand-written .cmake modules are
+# project sources (find modules, toolchain files). CMake's generated files are
+# ignored explicitly above.
 
 # IDE
 .vscode/
@@ -56,8 +59,9 @@ CTestTestfile.cmake
 .DS_Store
 Thumbs.db
 
-# Steamworks SDK (large, not in repo)
-dev-env/steamworks-sdk/
+# Steamworks SDK contents (large, not in repo) — keep the directory placeholder tracked
+dev-env/steamworks-sdk/*
+!dev-env/steamworks-sdk/.gitkeep
 
 # Test outputs
 Testing/
@@ -68,4 +72,5 @@ coverage/
 *.gcov
 
 # Container
-.containerignore
+# .containerignore is a project deliverable (bounds the container build context) — must stay tracked.
+!.containerignore

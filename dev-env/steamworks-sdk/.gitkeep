@@ -1,0 +1,3 @@
+# Place Steamworks SDK here (downloaded from Steamworks developer portal)
+# This directory is mounted into the container at /opt/steamworks-sdk
+# Contents are gitignored - not committed to repository
