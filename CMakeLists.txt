@@ -20,7 +20,10 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2 REQUIRED IMPORTED_TARGET sdl2)
 pkg_check_modules(SDL2_MIXER REQUIRED IMPORTED_TARGET SDL2_mixer)
 pkg_check_modules(OPENGL REQUIRED IMPORTED_TARGET gl)
-find_package(gtest QUIET)
+# NOTE: the package name case matters for the FOUND variable CMake sets:
+# `find_package(gtest)` sets gtest_FOUND, `find_package(GTest)` sets GTest_FOUND.
+# The guard below checks GTest_FOUND, so the call must use the canonical casing.
+find_package(GTest QUIET)
 
 # ---- Main executable -------------------------------------------------------
 # NOTE: gameplay sources live in src/ and do not exist yet (greenfield story

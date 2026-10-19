@@ -169,7 +169,23 @@ cd "$WORKSPACE_DIR"
 if [ -f "CMakeLists.txt" ]; then
     check_output "CMake configure (Debug)" "cmake -B build -DCMAKE_BUILD_TYPE=Debug 2>&1"
     check_output "CMake build" "cmake --build build --parallel 2>&1"
-    check_output "CMake test" "ctest --test-dir build --output-on-failure 2>&1"
+
+    # Guard against a false PASS: ctest exits 0 even when the suite is empty
+    # (e.g. the gtest wiring in CMakeLists.txt failed to register any test).
+    # That must count as a failure, not a silent success.
+    # (`|| true` is required: grep -c exits 1 on zero matches, which would
+    # otherwise terminate the shell under `set -e` — same bug class as D1.)
+    registered=$(ctest --test-dir build -N 2>/dev/null | grep -c '^Test #' || true)
+    if [ "$registered" -gt 0 ]; then
+        echo -n "Checking CMake test registration... "
+        echo -e "${GREEN}PASS${NC} ($registered tests registered)"
+        pass_count=$((pass_count + 1))
+        check_output "CMake test" "ctest --test-dir build --output-on-failure 2>&1"
+    else
+        echo -n "Checking CMake test registration... "
+        echo -e "${RED}FAIL${NC} (ctest reports 0 registered tests - gtest wiring broken?)"
+        fail_count=$((fail_count + 1))
+    fi
 else
     echo -e "${YELLOW}SKIP${NC} - No CMakeLists.txt found in workspace (expected for greenfield project)"
 fi
