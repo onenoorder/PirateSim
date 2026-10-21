@@ -16,21 +16,26 @@ CMakeFiles/
 cmake_install.cmake
 CTestTestfile.cmake
 CMakeUserPresets.json
+*.cmake~
 # NOTE: *.cmake is intentionally NOT ignored — hand-written .cmake modules are
 # project sources (find modules, toolchain files). CMake's generated files are
 # ignored explicitly above.
 
 # IDE
+.vs/
 .vscode/
 .idea/
 *.sln
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
+*.slo
+*.user
 *.opendb
 *.opensdf
 *.sdf
 *.suo
+*.db
 
 # Compiled objects
 *.o
@@ -38,6 +43,8 @@ CMakeUserPresets.json
 *.exe
 *.dll
 *.so
+*.so.*
+*.dylib
 *.a
 *.lib
 *.exp
@@ -57,7 +64,12 @@ CMakeUserPresets.json
 *.tmp
 *.temp
 .DS_Store
+._*
 Thumbs.db
+desktop.ini
+
+# Game-specific
+steam_appid.txt
 
 # Steamworks SDK contents (large, not in repo) — keep the directory placeholder tracked
 dev-env/steamworks-sdk/*
