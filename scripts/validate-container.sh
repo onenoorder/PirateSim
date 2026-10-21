@@ -175,7 +175,10 @@ if [ -f "CMakeLists.txt" ]; then
     # That must count as a failure, not a silent success.
     # (`|| true` is required: grep -c exits 1 on zero matches, which would
     # otherwise terminate the shell under `set -e` — same bug class as D1.)
-    registered=$(ctest --test-dir build -N 2>/dev/null | grep -c '^Test #' || true)
+    # NOTE: real ctest (e.g. 3.30.8) prints test listings with leading
+    # whitespace ("  Test #1: Name"), so the pattern must tolerate that
+    # indentation (D7) — `^Test #` anchored at column 0 matches nothing.
+    registered=$(ctest --test-dir build -N 2>/dev/null | grep -cE '^[[:space:]]*Test #' || true)
     if [ "$registered" -gt 0 ]; then
         echo -n "Checking CMake test registration... "
         echo -e "${GREEN}PASS${NC} ($registered tests registered)"
